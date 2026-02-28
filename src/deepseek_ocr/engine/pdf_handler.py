@@ -71,8 +71,6 @@ class PDFHandler:
         This works for scanned PDFs where each page is one big image.
         Returns None if the page has multiple images or no images.
         """
-        import fitz
-
         try:
             images = page.get_images(full=True)
             if len(images) != 1:
