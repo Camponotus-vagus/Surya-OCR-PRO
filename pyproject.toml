@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "deepseek-ocr-pro"
+version = "2.0.0"
+description = "High-precision document OCR powered by DeepSeek vision-language model"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.2",
+    "torchvision>=0.17",
+    "transformers==4.46.3",
+    "tokenizers==0.20.3",
+    "PyMuPDF>=1.24",
+    "Pillow>=10.0",
+    "python-docx>=1.0",
+    "einops>=0.7",
+    "easydict>=1.10",
+    "addict>=2.4",
+    "numpy<2",
+    "pyyaml>=6.0",
+    "tqdm>=4.66",
+    "huggingface_hub>=0.20",
+    "safetensors>=0.4",
+]
+
+[project.optional-dependencies]
+gui = ["customtkinter>=5.2"]
+dev = ["pytest>=8.0", "pytest-cov", "ruff"]
+
+[project.scripts]
+deepseek-ocr = "deepseek_ocr.cli:main"
+
+[project.gui-scripts]
+deepseek-ocr-gui = "deepseek_ocr.gui.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/deepseek_ocr"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests that require the model (deselect with '-m \"not slow\"')",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"

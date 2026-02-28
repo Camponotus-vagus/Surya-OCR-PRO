@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            artifact_name: deepseek-ocr-linux
+            asset_ext: ""
+          - os: macos-13
+            artifact_name: deepseek-ocr-macos-intel
+            asset_ext: ""
+          - os: macos-latest
+            artifact_name: deepseek-ocr-macos-arm
+            asset_ext: ""
+          - os: windows-latest
+            artifact_name: deepseek-ocr-windows
+            asset_ext: ".exe"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e ".[gui]"
+
+      - name: Build executable
+        run: |
+          pyinstaller --name deepseek-ocr \
+            --onefile \
+            --add-data "models/config.json:models/" \
+            --add-data "models/processor_config.json:models/" \
+            --add-data "models/tokenizer.json:models/" \
+            --add-data "models/tokenizer_config.json:models/" \
+            --add-data "models/special_tokens_map.json:models/" \
+            --add-data "models/model.safetensors.index.json:models/" \
+            --add-data "models/modeling_deepseekocr.py:models/" \
+            --add-data "models/modeling_deepseekv2.py:models/" \
+            --add-data "models/deepencoder.py:models/" \
+            --add-data "models/conversation.py:models/" \
+            --add-data "models/configuration_deepseek_v2.py:models/" \
+            --hidden-import customtkinter \
+            --hidden-import torch \
+            --hidden-import transformers \
+            --hidden-import safetensors \
+            --hidden-import einops \
+            --hidden-import easydict \
+            --hidden-import addict \
+            --collect-all customtkinter \
+            src/deepseek_ocr/__main__.py
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true

@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Model weights (too large for git)
+models/*.safetensors
+models/*.bin
+models/*.pt
+models/.cache/
+models/.gitattributes
+models/.ipynb_checkpoints/
+models/assets/
+models/LICENSE
+models/README.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Output
+output/
+
+# Logs
+*.log
+logs/
+
+# Temp
+tmp/
+.tmp/
+
+# PyInstaller
+*.spec.bak
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
