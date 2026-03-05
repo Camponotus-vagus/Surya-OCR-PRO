@@ -1,7 +1,10 @@
-"""Entry point for `python -m deepseek_ocr`."""
+"""Entry point for `python -m deepseek_ocr` and PyInstaller bundles."""
 
 import sys
 
-from .cli import main
+try:
+    from .cli import main
+except ImportError:
+    from deepseek_ocr.cli import main
 
 sys.exit(main())

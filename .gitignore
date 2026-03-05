@@ -48,6 +48,7 @@ tmp/
 
 # PyInstaller
 *.spec.bak
+build/deepseek_ocr/
 
 # Test
 .pytest_cache/
