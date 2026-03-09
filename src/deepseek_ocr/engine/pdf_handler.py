@@ -96,6 +96,20 @@ class PDFHandler:
             if img.mode != "RGB":
                 img = img.convert("RGB")
 
+            # Apply page rotation to the extracted image.
+            # The raw embedded image is stored without rotation, but the page
+            # may specify rotation (90, 180, 270) that must be applied so the
+            # text appears upright.
+            rotation = page.rotation
+            if rotation == 90:
+                img = img.transpose(Image.ROTATE_270)  # 90° CW display = 270° CCW PIL
+            elif rotation == 180:
+                img = img.transpose(Image.ROTATE_180)
+            elif rotation == 270:
+                img = img.transpose(Image.ROTATE_90)   # 270° CW display = 90° CCW PIL
+            if rotation:
+                log.debug(f"Applied page rotation {rotation}° to embedded image")
+
             img = self._downscale_if_needed(img)
             log.debug(f"Extracted embedded image: {img.size[0]}x{img.size[1]}")
             return img
