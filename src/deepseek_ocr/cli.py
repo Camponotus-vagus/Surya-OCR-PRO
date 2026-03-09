@@ -45,8 +45,8 @@ Examples:
         help="Path to model directory (default: ./models)",
     )
     parser.add_argument(
-        "--quantize", default="int8", choices=["none", "int8"],
-        help="Quantization: none or int8 (default: int8)",
+        "--quantize", default="none", choices=["none", "int8"],
+        help="Quantization: none or int8 (default: none, int8 hurts OCR quality)",
     )
     parser.add_argument(
         "--device", default="auto", choices=["auto", "cpu", "cuda", "mps"],

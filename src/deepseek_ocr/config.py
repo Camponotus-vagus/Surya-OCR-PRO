@@ -17,7 +17,7 @@ class OCRConfig:
 
     # Model
     model_path: str = "./models"
-    quantize: str = "int8"  # "none" or "int8"
+    quantize: str = "none"  # "none" or "int8" (int8 hurts OCR quality on CPU)
     device: str = "auto"  # "auto", "cpu", "cuda", "mps"
 
     # Processing

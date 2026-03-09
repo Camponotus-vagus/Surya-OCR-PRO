@@ -14,7 +14,7 @@ class TestCLIParser:
         assert args.inputs == ["input.pdf"]
         assert args.output == "./output"
         assert args.mode == "accurate"
-        assert args.quantize == "int8"
+        assert args.quantize == "none"
         assert args.device == "auto"
 
     def test_multiple_inputs(self):

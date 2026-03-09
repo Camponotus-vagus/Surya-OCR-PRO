@@ -49,6 +49,7 @@ def load_model(model_path: str, device: str, quantize: str = "int8"):
         trust_remote_code=True,
         use_safetensors=True,
         torch_dtype=load_dtype,
+        low_cpu_mem_usage=True,  # Avoid doubling peak memory during loading
     )
     model = model.to(torch.device(device)).eval()
 

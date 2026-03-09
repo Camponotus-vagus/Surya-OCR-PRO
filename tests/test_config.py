@@ -11,7 +11,7 @@ class TestOCRConfig:
     def test_defaults(self):
         config = OCRConfig()
         assert config.mode == "accurate"
-        assert config.quantize == "int8"
+        assert config.quantize == "none"
         assert config.device == "auto"
         assert config.formats == ["txt"]
         assert config.resume is False

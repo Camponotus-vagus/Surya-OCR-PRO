@@ -623,7 +623,7 @@ class DeepseekOCRForCausalLM(DeepseekV2ForCausalLM):
             if isinstance(past_key_values, Cache):
                 cache_length = past_key_values.get_seq_length()
                 past_length = past_key_values.seen_tokens
-                max_cache_length = past_key_values.get_max_length()
+                max_cache_length = past_key_values.get_max_length() if hasattr(past_key_values, 'get_max_length') else None
             else:
                 cache_length = past_length = past_key_values[0][0].shape[2]
                 max_cache_length = None
@@ -707,15 +707,13 @@ class DeepseekOCRForCausalLM(DeepseekV2ForCausalLM):
         os.makedirs(f'{output_path}/images', exist_ok=True)
 
         if prompt and image_file:
+            # The prompt should include the <image> token (e.g. "<image>\nFree OCR. ")
+            # so that the image placeholder is properly inserted in the text.
+            content = f'{prompt}' if '<image>' in prompt else f'<image>\n{prompt}'
             conversation = [
                 {
                     "role": "<|User|>",
-                    # "content": "<image>\n<|grounding|>Given the layout of the image. ",
-                    "content": f'{prompt}',
-                    # "content": "君不见黄河之水天上来的下一句是什么？",
-                    # "content": "<image>\nFree OCR. ",
-                    # "content": "<image>\nParse the figure. ",
-                    # "content": "<image>\nExtract the text in the image. ",
+                    "content": content,
                     "images": [f'{image_file}'],
                 },
                 {"role": "<|Assistant|>", "content": ""},
@@ -725,13 +723,7 @@ class DeepseekOCRForCausalLM(DeepseekV2ForCausalLM):
             conversation = [
                 {
                     "role": "<|User|>",
-                    # "content": "<image>\n<|grounding|>Given the layout of the image. ",
                     "content": f'{prompt}',
-                    # "content": "君不见黄河之水天上来的下一句是什么？",
-                    # "content": "<image>\nFree OCR. ",
-                    # "content": "<image>\nParse the figure. ",
-                    # "content": "<image>\nExtract the text in the image. ",
-                    # "images": [f'{image_file}'],
                 },
                 {"role": "<|Assistant|>", "content": ""},
             ]
@@ -909,8 +901,13 @@ class DeepseekOCRForCausalLM(DeepseekV2ForCausalLM):
 
 
         device_type = self.device.type
-        if device_type == "mps": device_type = "cpu"  # Autocast on MPS may not support bfloat16 natively
-        autocast_dtype = torch.float16 if self.device.type == "mps" else torch.bfloat16
+        if device_type == "mps":
+            device_type = "cpu"          # Autocast on MPS may not support bfloat16 natively
+            autocast_dtype = torch.float16
+        elif device_type == "cpu":
+            autocast_dtype = torch.float32  # INT8 quantized layers require float32 input
+        else:
+            autocast_dtype = torch.bfloat16
 
         if not eval_mode:
             streamer = NoEOSTextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=False)
