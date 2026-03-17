@@ -24,13 +24,15 @@ import json
 def load_image(image_input):
     """Load image from path or use PIL Image object directly."""
     if isinstance(image_input, Image.Image):
-        return ImageOps.exif_transpose(image_input)
+        # Optimization: only transpose if EXIF data exists to avoid redundant copy
+        return ImageOps.exif_transpose(image_input) if image_input.getexif() else image_input
 
     try:
         image = Image.open(image_input)
-        
-        corrected_image = ImageOps.exif_transpose(image)
-        
+
+        # Optimization: only transpose if EXIF data exists
+        corrected_image = ImageOps.exif_transpose(image) if image.getexif() else image
+
         return corrected_image
         
     except Exception as e:
@@ -292,14 +294,11 @@ def load_pil_images(conversations: List[Dict[str, str]]) -> List[Image.Image]:
             continue
 
         for image_path in message["images"]:
-            # print('----------------')
-            # print(image_path)
-            # print('----------------')
-            # exit()
-            
             # pil_img = Image.open(image_path)
             pil_img = load_image(image_path)
-            pil_img = pil_img.convert("RGB")
+            # Optimization: check mode before converting to avoid redundant copy
+            if pil_img.mode != "RGB":
+                pil_img = pil_img.convert("RGB")
             pil_images.append(pil_img)
 
     return pil_images
@@ -433,11 +432,6 @@ class DeepseekOCRModel(DeepseekV2Model):
                         global_features = torch.cat((global_features_2[:, 1:], global_features_1.flatten(2).permute(0, 2, 1)), dim=-1) 
                         global_features = self.projector(global_features)
 
-                        print('=====================')
-                        print('BASE: ', global_features.shape)
-                        print('PATCHES: ', local_features.shape)
-                        print('=====================')
-
                         _, hw, n_dim = global_features.shape
                         h = w = int(hw ** 0.5)
 
@@ -476,10 +470,6 @@ class DeepseekOCRModel(DeepseekV2Model):
                         global_features_2 = vision_model(image_ori, global_features_1) 
                         global_features = torch.cat((global_features_2[:, 1:], global_features_1.flatten(2).permute(0, 2, 1)), dim=-1) 
                         global_features = self.projector(global_features)
-                        print('=====================')
-                        print('BASE: ', global_features.shape)
-                        print('NO PATCHES')
-                        print('=====================')
                         _, hw, n_dim = global_features.shape
                         h = w = int(hw ** 0.5)
 
@@ -669,7 +659,6 @@ class DeepseekOCRForCausalLM(DeepseekV2ForCausalLM):
 
         # TODO @gante we should only keep a `cache_position` in generate, and do +=1.
         # same goes for position ids. Could also help with continued generation.
-        torch.arange(past_length, past_length + position_ids.shape[-1], device=position_ids.device)
 
         # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
         if inputs_embeds is not None and past_key_values is None:
@@ -749,7 +738,9 @@ class DeepseekOCRForCausalLM(DeepseekV2ForCausalLM):
         valid_img_tokens = 0
         ratio = 1
 
-        image_draw = images[0].copy()
+        # Optimization: Use the image directly for size calculations.
+        # Large copies are deferred until strictly necessary (e.g. for drawing/saving).
+        image_draw = images[0]
 
         w,h = image_draw.size
         # print(w, h)
@@ -913,7 +904,14 @@ class DeepseekOCRForCausalLM(DeepseekV2ForCausalLM):
         device_type = self.device.type
         if device_type == "mps":
             device_type = "cpu"  # Autocast on MPS may not support bfloat16 natively
-        autocast_dtype = torch.float16 if self.device.type == "mps" else torch.bfloat16
+
+        # Optimization: use float32 on CPU/MPS-CPU to avoid slow bfloat16 emulation
+        if device_type == "cpu":
+            autocast_dtype = torch.float32
+        elif self.device.type == "mps":
+            autocast_dtype = torch.float16
+        else:
+            autocast_dtype = torch.bfloat16
 
         if not eval_mode:
             streamer = NoEOSTextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=False)
@@ -986,6 +984,7 @@ class DeepseekOCRForCausalLM(DeepseekV2ForCausalLM):
 
             matches_ref, matches_images, mathes_other = re_match(outputs)
             # print(matches_ref)
+            # process_image_with_refs will handle drawing/copying if needed
             result = process_image_with_refs(image_draw, matches_ref, output_path)
 
 
