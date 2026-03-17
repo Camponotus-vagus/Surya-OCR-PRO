@@ -118,39 +118,17 @@ class OCREngine:
             )
 
     def _run_inference(self, image: Image.Image, output_dir: str) -> str:
-        """Call the model's infer() method and return decoded text.
-
-        The model's infer() uses torch.autocast with bfloat16 internally.
-        On CPU, bfloat16 is emulated and conflicts with INT8 quantization.
-        We patch torch.autocast on CPU to use float32 instead, which is
-        both faster (native) and compatible with quantized layers.
-        """
-        import torch
-
-        # Patch autocast for CPU: force float32 instead of bfloat16
-        if self._device == "cpu":
-            _original_autocast = torch.autocast
-            def _patched_autocast(device_type, **kwargs):
-                if device_type == "cpu":
-                    kwargs["dtype"] = torch.float32
-                return _original_autocast(device_type, **kwargs)
-            torch.autocast = _patched_autocast
-
-        try:
-            result = self._model.infer(
-                self._tokenizer,
-                prompt=self.config.prompt,
-                image_file=image,
-                output_path=output_dir,
-                base_size=self.config.base_size,
-                image_size=self.config.base_size,
-                crop_mode=self.config.crop_mode,
-                eval_mode=True,  # CRITICAL: enables text return instead of streaming
-            )
-        finally:
-            # Restore original autocast
-            if self._device == "cpu":
-                torch.autocast = _original_autocast
+        """Call the model's infer() method and return decoded text."""
+        result = self._model.infer(
+            self._tokenizer,
+            prompt=self.config.prompt,
+            image_file=image,
+            output_path=output_dir,
+            base_size=self.config.base_size,
+            image_size=self.config.base_size,
+            crop_mode=self.config.crop_mode,
+            eval_mode=True,  # CRITICAL: enables text return instead of streaming
+        )
 
         if result is None:
             return ""
