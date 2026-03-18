@@ -2,7 +2,7 @@
 
 import pytest
 
-from deepseek_ocr.cli import build_parser, main
+from surya_ocr.cli import build_parser, main
 
 
 class TestCLIParser:
@@ -63,7 +63,7 @@ class TestCLIParser:
         """CLI should launch GUI when no arguments are provided (double-click)."""
         launched = []
         monkeypatch.setattr(
-            "deepseek_ocr.cli._launch_gui",
+            "surya_ocr.cli._launch_gui",
             lambda: launched.append(True) or 0,
         )
         result = main([])

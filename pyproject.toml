@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "deepseek-ocr-pro"
+name = "surya-ocr-pro"
 version = "3.0.0"
 description = "High-precision document OCR powered by Surya/marker-pdf"
 readme = "README.md"
@@ -23,13 +23,13 @@ gui = ["customtkinter>=5.2"]
 dev = ["pytest>=8.0", "pytest-cov", "ruff"]
 
 [project.scripts]
-deepseek-ocr = "deepseek_ocr.cli:main"
+surya-ocr = "surya_ocr.cli:main"
 
 [project.gui-scripts]
-deepseek-ocr-gui = "deepseek_ocr.gui.app:main"
+surya-ocr-gui = "surya_ocr.gui.app:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/deepseek_ocr"]
+packages = ["src/surya_ocr"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

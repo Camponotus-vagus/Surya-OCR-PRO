@@ -3,9 +3,9 @@
 import pytest
 from pathlib import Path
 
-from deepseek_ocr.engine.ocr_engine import PageResult
-from deepseek_ocr.output.writer_txt import write_txt, write_txt_per_page
-from deepseek_ocr.output.writer_markdown import write_markdown
+from surya_ocr.engine.ocr_engine import PageResult
+from surya_ocr.output.writer_txt import write_txt, write_txt_per_page
+from surya_ocr.output.writer_markdown import write_markdown
 
 
 def _make_results(n=3):
@@ -80,7 +80,7 @@ class TestMarkdownWriter:
 class TestDocxWriter:
     def test_write_docx(self, tmp_output):
         try:
-            from deepseek_ocr.output.writer_docx import write_docx
+            from surya_ocr.output.writer_docx import write_docx
         except ImportError:
             pytest.skip("python-docx not installed")
 

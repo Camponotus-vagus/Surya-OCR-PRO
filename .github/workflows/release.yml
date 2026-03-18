@@ -12,13 +12,11 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux excluded: PyTorch bundle exceeds GitHub's 2 GB asset limit.
-          # Linux users install from source: pip install -e ".[gui]"
           - os: macos-latest
-            artifact_name: deepseek-ocr-macos-arm
+            artifact_name: surya-ocr-macos-arm
             asset_ext: ""
           - os: windows-latest
-            artifact_name: deepseek-ocr-windows
+            artifact_name: surya-ocr-windows
             asset_ext: ".exe"
 
     runs-on: ${{ matrix.os }}
@@ -39,14 +37,14 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --name deepseek-ocr \
+          pyinstaller --name surya-ocr \
             --onefile \
             --hidden-import customtkinter \
             --hidden-import torch \
             --hidden-import surya \
             --hidden-import marker \
             --collect-all customtkinter \
-            src/deepseek_ocr/__main__.py
+            src/surya_ocr/__main__.py
         shell: bash
 
       - name: Upload artifact

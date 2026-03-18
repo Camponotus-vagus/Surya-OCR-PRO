@@ -4,7 +4,7 @@ import pytest
 from pathlib import Path
 from PIL import Image
 
-from deepseek_ocr.engine.image_extractor import ImageExtractor
+from surya_ocr.engine.image_extractor import ImageExtractor
 
 
 class TestImageExtractor:

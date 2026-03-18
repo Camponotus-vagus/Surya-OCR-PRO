@@ -2,72 +2,73 @@
 
 ## [3.0.0] - 2026-03-18
 
-### Migrazione motore OCR: DeepSeek -> Surya/marker-pdf
-- **Sostituzione completa** del motore OCR: rimosso DeepSeek VLM, adottato marker-pdf (Surya)
-- **Qualita' OCR nettamente superiore**: nomi scientifici in corsivo preservati, struttura markdown corretta, testo italiano fluido
-- **Layout analysis avanzato**: riconoscimento tabelle, heading, ordine di lettura - critico per chiavi dicotomiche
-- **90+ lingue supportate** nativamente (italiano, latino, inglese, etc.)
-- **Nessun download manuale del modello**: Surya scarica automaticamente i modelli al primo avvio (~2 GB vs 6.2 GB di DeepSeek)
-- **Nessuna dipendenza da transformers/tokenizers**: rimossi vincoli di versione rigidi
+### OCR Engine Migration: DeepSeek -> Surya/marker-pdf
+- **Complete OCR engine replacement**: removed DeepSeek VLM, adopted marker-pdf (Surya)
+- **Dramatically improved OCR quality**: scientific names in italic preserved, correct markdown structure, fluent Italian text
+- **Advanced layout analysis**: table recognition, headings, reading order — critical for dichotomous keys
+- **90+ languages** supported natively (Italian, Latin, English, etc.)
+- **No manual model download**: Surya auto-downloads models on first run (~2 GB vs 6.2 GB for DeepSeek)
+- **No transformers/tokenizers dependency**: removed rigid version constraints
 
-### Semplificazioni
-- Rimossi parametri DeepSeek-specifici: `--mode`, `--quantize`, `--device`, `--model-path`, `--prompt`, `--max-tokens`, `--setup`
-- Aggiunto parametro `--languages` per specificare le lingue OCR (default: `it,la`)
-- Aggiunto parametro `--no-force-ocr` per PDF con testo digitale
-- Semplificato text post-processor (output marker-pdf e' gia' pulito, non servono filtri anti-allucinazione)
-- Rimossi file modello DeepSeek dalla directory `models/`
-- Rimosso script `scripts/download_model.py` (non piu' necessario)
+### Simplifications
+- Removed DeepSeek-specific parameters: `--mode`, `--quantize`, `--device`, `--model-path`, `--prompt`, `--max-tokens`, `--setup`
+- Added `--languages` parameter for OCR language selection (default: `it,la`)
+- Added `--no-force-ocr` for PDFs with digital text
+- Simplified text post-processor (marker-pdf output is already clean, no anti-hallucination filters needed)
+- Removed DeepSeek model files from `models/` directory
+- Renamed CLI command from `deepseek-ocr` to `surya-ocr`
+- Renamed Python package from `deepseek_ocr` to `surya_ocr`
 
-### Dipendenze
-- **Aggiunta**: `marker-pdf>=1.10` (include surya-ocr automaticamente)
-- **Rimosse**: `torch` (diretto), `transformers`, `tokenizers`, `einops`, `easydict`, `addict`, `safetensors`, `huggingface_hub`
-- **Mantenute**: `PyMuPDF`, `Pillow`, `python-docx`, `pyyaml`, `tqdm`
+### Dependencies
+- **Added**: `marker-pdf>=1.10` (includes surya-ocr automatically)
+- **Removed**: `torch` (direct), `transformers`, `tokenizers`, `einops`, `easydict`, `addict`, `safetensors`, `huggingface_hub`
+- **Kept**: `PyMuPDF`, `Pillow`, `python-docx`, `pyyaml`, `tqdm`
 
-### Note per utenti V2
-- Il sistema di checkpoint e' compatibile: i job interrotti con V2 possono essere ripresi con V3
-- I formati di output (TXT, Markdown, DOCX) sono identici
-- La GUI e' stata aggiornata ma mantiene lo stesso layout
+### Notes for V2 Users
+- Checkpoint system is compatible: jobs interrupted with V2 can be resumed with V3
+- Output formats (TXT, Markdown, DOCX) are identical
+- GUI has been updated but maintains the same layout
 
 ---
 
 ## [2.0.0] - 2026-02-28
 
-### Architettura
-- **Riscrittura completa** da GUI-only monolite a architettura CLI-first modulare
-- **Architettura a layer**: Engine -> Pipeline -> CLI -> GUI (opzionale)
-- Eliminata architettura subprocess (V1 lanciava `run_ocr_custom.py` come processo separato)
-- Ogni modulo ha responsabilita' singola e puo' essere testato indipendentemente
+### Architecture
+- **Complete rewrite** from GUI-only monolith to CLI-first modular architecture
+- **Layered architecture**: Engine -> Pipeline -> CLI -> GUI (optional)
+- Eliminated subprocess architecture (V1 launched `run_ocr_custom.py` as a separate process)
+- Each module has single responsibility and can be tested independently
 
-### Ottimizzazioni Performance (CPU Intel)
-- **float32 nativo** invece di bfloat16 emulato su CPU Intel (1.5-2x speedup)
-- **INT8 dynamic quantization** su layer lineari del language model (2-4x speedup)
-- **Thread tuning**: 8 thread = core fisici per evitare overhead hyperthreading
-- **Pipeline prefetch**: pre-estrazione pagine in background mentre il modello processa
-- **Estrazione diretta** immagini embedded da PDF con PyMuPDF (no re-rasterizzazione)
-- **torch.autocast patch**: forza float32 su CPU per compatibilita' con INT8
+### Performance Optimizations (Intel CPU)
+- **Native float32** instead of emulated bfloat16 on Intel CPUs (1.5-2x speedup)
+- **INT8 dynamic quantization** on language model linear layers (2-4x speedup)
+- **Thread tuning**: 8 threads = physical cores to avoid hyperthreading overhead
+- **Pipeline prefetch**: pre-extract pages in background while model processes
+- **Direct extraction** of embedded images from PDF with PyMuPDF (no re-rasterization)
+- **torch.autocast patch**: force float32 on CPU for INT8 compatibility
 
-### Bug Fix Critici
-- **Fix V1 bug `infer()` return None**: V1 chiamava `model.infer()` senza `eval_mode=True`,
-  il metodo non ritornava testo ma `None`. V2 usa `eval_mode=True` che ritorna il testo decodificato.
-- Rimossa dipendenza da `pdf2image` + poppler (sostituita con PyMuPDF, zero dipendenze esterne)
-- Fix gestione path con spazi e caratteri speciali (accenti, etc.)
+### Critical Bug Fixes
+- **Fix V1 bug `infer()` return None**: V1 called `model.infer()` without `eval_mode=True`,
+  the method returned `None` instead of text. V2 uses `eval_mode=True` which returns decoded text.
+- Removed `pdf2image` + poppler dependency (replaced with PyMuPDF, zero external dependencies)
+- Fix path handling with spaces and special characters (accents, etc.)
 
-### Nuove Feature
-- **CLI completa** con argparse: `deepseek-ocr [OPTIONS] INPUT...`
-- **Output Markdown**: preserva la formattazione markdown generata dal modello
-- **Estrazione immagini**: embedded dal PDF + regioni rilevate dal modello (grounding)
-- **Sistema checkpoint/resume**: salva risultati per-pagina, riprende dopo interruzioni
-- **File di configurazione**: supporto YAML/JSON per salvare impostazioni
-- **Logging strutturato**: file + console con livelli configurabili
-- **Cancellazione**: pulsante Cancel nella GUI per interrompere l'elaborazione
+### New Features
+- **Full CLI** with argparse: `surya-ocr [OPTIONS] INPUT...`
+- **Markdown output**: preserves markdown formatting generated by the model
+- **Image extraction**: embedded from PDF + model-detected regions (grounding)
+- **Checkpoint/resume system**: saves per-page results, resumes after interruptions
+- **Configuration files**: YAML/JSON support for saving settings
+- **Structured logging**: file + console with configurable levels
+- **Cancellation**: Cancel button in GUI to interrupt processing
 
-### Dipendenze
-- **Rimossa**: `pdf2image`, poppler (dipendenza sistema)
-- **Aggiunta**: `PyMuPDF` (fitz) - PDF handling puro Python, cross-platform
-- **Aggiunta**: `pyyaml` - file di configurazione
-- **Opzionale**: `customtkinter` - solo per la GUI
+### Dependencies
+- **Removed**: `pdf2image`, poppler (system dependency)
+- **Added**: `PyMuPDF` (fitz) - pure Python PDF handling, cross-platform
+- **Added**: `pyyaml` - configuration files
+- **Optional**: `customtkinter` - GUI only
 
 ### Testing
-- 86 unit test con pytest (tutti passano)
+- 86 unit tests with pytest (all passing)
 - Coverage: config, PDF handler, checkpoint, text post-processing, CLI, output writers, image extractor
-- Test per edge case: path con spazi, Unicode, file bloccati, pagine corrotte
+- Tests for edge cases: paths with spaces, Unicode, locked files, corrupted pages

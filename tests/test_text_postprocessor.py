@@ -1,6 +1,6 @@
 """Tests for text post-processing."""
 
-from deepseek_ocr.engine.text_postprocessor import (
+from surya_ocr.engine.text_postprocessor import (
     clean_ocr_text,
     clean_for_markdown,
     extract_grounding_regions,

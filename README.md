@@ -35,28 +35,28 @@ OCR models are downloaded automatically on first run (managed by marker-pdf/Sury
 
 ```bash
 # Basic OCR
-deepseek-ocr document.pdf
+surya-ocr document.pdf
 
 # Multiple formats with image extraction
-deepseek-ocr document.pdf -f txt -f markdown -f docx --extract-images
+surya-ocr document.pdf -f txt -f markdown -f docx --extract-images
 
 # Resume interrupted job
-deepseek-ocr large_book.pdf --resume
+surya-ocr large_book.pdf --resume
 
 # Specify languages (default: Italian + Latin)
-deepseek-ocr document.pdf --languages it,la,en
+surya-ocr document.pdf --languages it,la,en
 
 # Process all PDFs in a directory
-deepseek-ocr /path/to/pdfs/ -o ./output
+surya-ocr /path/to/pdfs/ -o ./output
 
 # Launch GUI
-deepseek-ocr --gui
+surya-ocr --gui
 ```
 
 ### CLI Options
 
 ```
-deepseek-ocr [OPTIONS] INPUT [INPUT...]
+surya-ocr [OPTIONS] INPUT [INPUT...]
 
 Arguments:
   INPUT                     PDF file(s) or directory
@@ -90,7 +90,7 @@ For long documents on CPU, use `--resume` to enable checkpoint/resume.
 ## Project Structure
 
 ```
-src/deepseek_ocr/
+src/surya_ocr/
   cli.py            # Command-line interface
   config.py         # Configuration management
   engine/           # OCR engine (marker-pdf/Surya), PDF handling
@@ -110,7 +110,7 @@ pip install -e ".[dev]"
 pytest tests/ -v
 
 # Run tests with coverage
-pytest tests/ --cov=src/deepseek_ocr --cov-report=html
+pytest tests/ --cov=src/surya_ocr --cov-report=html
 ```
 
 ## License
