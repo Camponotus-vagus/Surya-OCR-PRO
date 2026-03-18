@@ -98,7 +98,7 @@ def empty_pdf(tmp_path):
 @pytest.fixture
 def default_config(tmp_path, sample_pdf):
     """Default OCRConfig for testing."""
-    from deepseek_ocr.config import OCRConfig
+    from surya_ocr.config import OCRConfig
     return OCRConfig(
         pdf_paths=[sample_pdf],
         output_dir=str(tmp_path / "output"),

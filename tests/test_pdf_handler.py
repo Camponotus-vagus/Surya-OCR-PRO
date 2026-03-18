@@ -3,7 +3,7 @@
 import pytest
 from PIL import Image
 
-from deepseek_ocr.engine.pdf_handler import PDFHandler
+from surya_ocr.engine.pdf_handler import PDFHandler
 
 
 class TestPDFHandler:

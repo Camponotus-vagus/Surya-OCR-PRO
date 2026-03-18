@@ -21,7 +21,7 @@ def main():
         model_dict.clear()
 
         print("\nModels downloaded successfully!")
-        print("They are cached and will be used automatically by deepseek-ocr.")
+        print("They are cached and will be used automatically by surya-ocr.")
         return 0
 
     except ImportError:

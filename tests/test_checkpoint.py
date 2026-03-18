@@ -4,8 +4,8 @@ import json
 import pytest
 from pathlib import Path
 
-from deepseek_ocr.engine.ocr_engine import PageResult
-from deepseek_ocr.pipeline.checkpoint import CheckpointManager
+from surya_ocr.engine.ocr_engine import PageResult
+from surya_ocr.pipeline.checkpoint import CheckpointManager
 
 
 class TestCheckpointManager:

@@ -4,7 +4,7 @@ import json
 import pytest
 from pathlib import Path
 
-from deepseek_ocr.config import OCRConfig
+from surya_ocr.config import OCRConfig
 
 
 class TestOCRConfig:

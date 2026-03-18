@@ -10,15 +10,15 @@ from . import __version__
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="deepseek-ocr",
+        prog="surya-ocr",
         description="Surya OCR PRO - High-precision document OCR powered by Surya/marker-pdf",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
-  deepseek-ocr book.pdf
-  deepseek-ocr book.pdf -f txt -f markdown --extract-images --resume
-  deepseek-ocr /path/to/pdfs/ -o ./output
-  deepseek-ocr --gui
+  surya-ocr book.pdf
+  surya-ocr book.pdf -f txt -f markdown --extract-images --resume
+  surya-ocr /path/to/pdfs/ -o ./output
+  surya-ocr --gui
         """,
     )
 
