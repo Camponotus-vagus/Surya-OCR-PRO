@@ -1,4 +1,4 @@
-# DeepSeek OCR PRO V3
+# Surya OCR PRO
 
 High-precision document OCR powered by [Surya](https://github.com/datalab-to/surya) and [marker-pdf](https://github.com/datalab-to/marker). Extracts text and images from scanned PDFs with state-of-the-art accuracy, full layout analysis, and 90+ language support.
 
@@ -18,8 +18,8 @@ High-precision document OCR powered by [Surya](https://github.com/datalab-to/sur
 
 ```bash
 # Clone the repository
-git clone https://github.com/Camponotus-vagus/DeepSeek-OCR-PRO.git
-cd DeepSeek-OCR-PRO
+git clone https://github.com/Camponotus-vagus/Surya-OCR-PRO.git
+cd Surya-OCR-PRO
 
 # Create virtual environment
 python -m venv venv

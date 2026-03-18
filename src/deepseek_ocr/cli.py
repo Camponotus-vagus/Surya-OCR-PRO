@@ -1,4 +1,4 @@
-"""Command-line interface for DeepSeek OCR PRO."""
+"""Command-line interface for Surya OCR PRO."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from . import __version__
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="deepseek-ocr",
-        description="DeepSeek OCR PRO - High-precision document OCR powered by Surya/marker-pdf",
+        description="Surya OCR PRO - High-precision document OCR powered by Surya/marker-pdf",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:

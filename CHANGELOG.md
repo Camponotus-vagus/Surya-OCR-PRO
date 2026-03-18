@@ -1,4 +1,4 @@
-# Changelog - DeepSeek OCR PRO
+# Changelog - Surya OCR PRO
 
 ## [3.0.0] - 2026-03-18
 

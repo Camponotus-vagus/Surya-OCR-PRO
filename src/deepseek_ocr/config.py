@@ -1,4 +1,4 @@
-"""Configuration management for DeepSeek OCR PRO."""
+"""Configuration management for Surya OCR PRO."""
 
 from __future__ import annotations
 
