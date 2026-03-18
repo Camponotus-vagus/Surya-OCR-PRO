@@ -125,10 +125,7 @@ class PDFHandler:
         for dpi in (self._fallback_dpi, 150, 100):
             try:
                 mat = fitz.Matrix(dpi / 72, dpi / 72)
-                pix = page.get_pixmap(matrix=mat)
-
-                if pix.alpha:
-                    pix = fitz.Pixmap(fitz.csRGB, pix)
+                pix = page.get_pixmap(matrix=mat, colorspace=fitz.csRGB, alpha=False)
 
                 img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                 img = self._downscale_if_needed(img)
