@@ -1,4 +1,4 @@
-"""Test fixtures for DeepSeek OCR PRO V3."""
+"""Test fixtures for Surya OCR PRO."""
 
 import pytest
 import sys

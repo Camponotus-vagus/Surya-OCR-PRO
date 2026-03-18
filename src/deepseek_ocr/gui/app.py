@@ -34,7 +34,7 @@ class OCRApp:
         import customtkinter as ctk
 
         self.root = root
-        self.root.title("DeepSeek OCR PRO V3 — Surya/marker-pdf")
+        self.root.title("Surya OCR PRO — marker-pdf")
         self.root.geometry("1100x850")
 
         self._engine = None
@@ -51,7 +51,7 @@ class OCRApp:
         top = ctk.CTkFrame(self.root, fg_color="transparent")
         top.grid(row=0, column=0, pady=10, sticky="ew")
 
-        ctk.CTkLabel(top, text="DeepSeek OCR PRO V3", font=("Arial", 24, "bold")).pack(side="left", padx=20)
+        ctk.CTkLabel(top, text="Surya OCR PRO", font=("Arial", 24, "bold")).pack(side="left", padx=20)
 
         self.btn_cancel = ctk.CTkButton(top, text="Cancel", command=self._cancel, fg_color="red", state="disabled")
         self.btn_cancel.pack(side="right", padx=10)
