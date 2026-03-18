@@ -1,4 +1,34 @@
-# Changelog - DeepSeek OCR PRO V2
+# Changelog - DeepSeek OCR PRO
+
+## [3.0.0] - 2026-03-18
+
+### Migrazione motore OCR: DeepSeek -> Surya/marker-pdf
+- **Sostituzione completa** del motore OCR: rimosso DeepSeek VLM, adottato marker-pdf (Surya)
+- **Qualita' OCR nettamente superiore**: nomi scientifici in corsivo preservati, struttura markdown corretta, testo italiano fluido
+- **Layout analysis avanzato**: riconoscimento tabelle, heading, ordine di lettura - critico per chiavi dicotomiche
+- **90+ lingue supportate** nativamente (italiano, latino, inglese, etc.)
+- **Nessun download manuale del modello**: Surya scarica automaticamente i modelli al primo avvio (~2 GB vs 6.2 GB di DeepSeek)
+- **Nessuna dipendenza da transformers/tokenizers**: rimossi vincoli di versione rigidi
+
+### Semplificazioni
+- Rimossi parametri DeepSeek-specifici: `--mode`, `--quantize`, `--device`, `--model-path`, `--prompt`, `--max-tokens`, `--setup`
+- Aggiunto parametro `--languages` per specificare le lingue OCR (default: `it,la`)
+- Aggiunto parametro `--no-force-ocr` per PDF con testo digitale
+- Semplificato text post-processor (output marker-pdf e' gia' pulito, non servono filtri anti-allucinazione)
+- Rimossi file modello DeepSeek dalla directory `models/`
+- Rimosso script `scripts/download_model.py` (non piu' necessario)
+
+### Dipendenze
+- **Aggiunta**: `marker-pdf>=1.10` (include surya-ocr automaticamente)
+- **Rimosse**: `torch` (diretto), `transformers`, `tokenizers`, `einops`, `easydict`, `addict`, `safetensors`, `huggingface_hub`
+- **Mantenute**: `PyMuPDF`, `Pillow`, `python-docx`, `pyyaml`, `tqdm`
+
+### Note per utenti V2
+- Il sistema di checkpoint e' compatibile: i job interrotti con V2 possono essere ripresi con V3
+- I formati di output (TXT, Markdown, DOCX) sono identici
+- La GUI e' stata aggiornata ma mantiene lo stesso layout
+
+---
 
 ## [2.0.0] - 2026-02-28
 
@@ -41,28 +71,3 @@
 - 86 unit test con pytest (tutti passano)
 - Coverage: config, PDF handler, checkpoint, text post-processing, CLI, output writers, image extractor
 - Test per edge case: path con spazi, Unicode, file bloccati, pagine corrotte
-- **Test end-to-end** con PDF reali (Carabidi 1 Natura.pdf, pagina 6):
-  - Pipeline completa funzionante: PDF -> estrazione pagina -> OCR -> output
-  - Modo `fast` (640px): qualita' insufficiente per scansioni B&W dense (~200 DPI).
-    Il testo viene downscalato troppo aggressivamente. Usare sempre `accurate` per questi PDF.
-  - Modo `accurate` (1024px + crop): qualita' ottimale per documenti scansionati
-  - torch.autocast patch verificato: risolve conflitto bfloat16/INT8 su CPU Intel
-
-### Distribuzione
-- Struttura progetto Python moderna con `pyproject.toml` (PEP 621)
-- `.gitignore` completo
-- Pronto per GitHub Actions CI/CD
-- Configurazione PyInstaller per build standalone (Windows, macOS, Linux)
-- Modello scaricato separatamente al primo avvio (non incluso nell'eseguibile)
-
-### Confronto V1 vs V2
-| Aspetto | V1 | V2 |
-|---------|----|----|
-| Interfaccia | Solo GUI | CLI + GUI opzionale |
-| Output | TXT, DOCX | TXT, TXT/pagina, DOCX, **Markdown** |
-| Immagini | Non implementato | **Embedded + grounding** |
-| Resume | No | **Checkpoint per-pagina** |
-| Performance CPU | bfloat16 emulato | **float32 + INT8 quantization** |
-| PDF library | pdf2image + poppler | **PyMuPDF (zero deps esterne)** |
-| Test | 0 | **86 test** |
-| Dipendenze esterne | poppler (sistema) | **Nessuna** |

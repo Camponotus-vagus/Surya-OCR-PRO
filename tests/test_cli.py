@@ -13,9 +13,7 @@ class TestCLIParser:
         args = self.parser.parse_args(["input.pdf"])
         assert args.inputs == ["input.pdf"]
         assert args.output == "./output"
-        assert args.mode == "accurate"
-        assert args.quantize == "none"
-        assert args.device == "auto"
+        assert args.languages == "it,la"
 
     def test_multiple_inputs(self):
         args = self.parser.parse_args(["a.pdf", "b.pdf", "c.pdf"])
@@ -29,17 +27,13 @@ class TestCLIParser:
         args = self.parser.parse_args(["in.pdf", "-f", "txt", "-f", "markdown", "-f", "docx"])
         assert args.format == ["txt", "markdown", "docx"]
 
-    def test_fast_mode(self):
-        args = self.parser.parse_args(["in.pdf", "-m", "fast"])
-        assert args.mode == "fast"
+    def test_languages(self):
+        args = self.parser.parse_args(["in.pdf", "--languages", "en,fr,de"])
+        assert args.languages == "en,fr,de"
 
-    def test_quantize_none(self):
-        args = self.parser.parse_args(["in.pdf", "--quantize", "none"])
-        assert args.quantize == "none"
-
-    def test_device_cpu(self):
-        args = self.parser.parse_args(["in.pdf", "--device", "cpu"])
-        assert args.device == "cpu"
+    def test_no_force_ocr(self):
+        args = self.parser.parse_args(["in.pdf", "--no-force-ocr"])
+        assert args.no_force_ocr is True
 
     def test_extract_images(self):
         args = self.parser.parse_args(["in.pdf", "--extract-images"])
@@ -53,29 +47,13 @@ class TestCLIParser:
         args = self.parser.parse_args(["in.pdf", "--workers", "4"])
         assert args.workers == 4
 
-    def test_prompt_freeocr(self):
-        args = self.parser.parse_args(["in.pdf", "--prompt", "freeocr"])
-        assert args.prompt == "freeocr"
-
     def test_gui_flag(self):
         args = self.parser.parse_args(["--gui"])
         assert args.gui is True
 
-    def test_setup_flag(self):
-        args = self.parser.parse_args(["--setup"])
-        assert args.setup is True
-
     def test_verbose(self):
         args = self.parser.parse_args(["in.pdf", "--verbose"])
         assert args.verbose is True
-
-    def test_max_tokens(self):
-        args = self.parser.parse_args(["in.pdf", "--max-tokens", "2048"])
-        assert args.max_tokens == 2048
-
-    def test_max_tokens_default(self):
-        args = self.parser.parse_args(["in.pdf"])
-        assert args.max_tokens == 4096
 
     def test_config_file(self):
         args = self.parser.parse_args(["--config", "my_config.yaml", "in.pdf"])

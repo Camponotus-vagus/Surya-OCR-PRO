@@ -1,17 +1,15 @@
-"""Pipeline orchestrator: coordinates PDF processing with prefetch, checkpoint, and output."""
+"""Pipeline orchestrator: coordinates PDF processing with checkpoint and output."""
 
 from __future__ import annotations
 
+import gc
 import logging
-from concurrent.futures import ThreadPoolExecutor, Future
 from pathlib import Path
 from typing import Callable, Optional
 
 from ..config import OCRConfig
-from ..engine.image_extractor import ImageExtractor
 from ..engine.ocr_engine import OCREngine, PageResult
 from ..engine.pdf_handler import PDFHandler
-from ..engine.text_postprocessor import extract_grounding_regions
 from ..output.writer_txt import write_txt, write_txt_per_page
 from ..output.writer_docx import write_docx
 from ..output.writer_markdown import write_markdown
@@ -24,11 +22,10 @@ log = logging.getLogger(__name__)
 class Orchestrator:
     """Orchestrates the full OCR pipeline for one or more PDFs.
 
-    Features:
-    - Page prefetching (extracts next pages while model processes current)
+    Processes each page individually via marker-pdf, with:
     - Checkpoint/resume support
     - Multiple output format generation
-    - Image extraction (embedded + model-detected regions)
+    - Image extraction from PDF
     """
 
     def __init__(
@@ -42,7 +39,6 @@ class Orchestrator:
         self.config = config
         self.engine = engine
         self.pdf_handler = PDFHandler()
-        self.image_extractor = ImageExtractor()
         self._progress_cb = progress_callback
         self._status_cb = status_callback
         self._cancel_check = cancel_check
@@ -78,7 +74,7 @@ class Orchestrator:
             completed_pages = checkpoint.get_completed_pages()
             log.info(f"Resuming: {len(completed_pages)}/{total_pages} pages already done")
         else:
-            checkpoint.init(total_pages, str(self.config.mode))
+            checkpoint.init(total_pages, "marker-pdf")
 
         # Setup progress
         progress = ProgressReporter(
@@ -99,14 +95,32 @@ class Orchestrator:
                 log.warning(f"Failed to load checkpoint for page {page_num}: {e}")
                 completed_pages.discard(page_num)
 
-        # Process remaining pages with prefetch
+        # Process remaining pages one by one
         pages_to_process = [p for p in range(total_pages) if p not in completed_pages]
 
-        if pages_to_process:
-            self._process_pages_with_prefetch(
-                pdf_path, pages_to_process, total_pages,
-                results, checkpoint, progress, str(output_subdir),
-            )
+        for page_num in pages_to_process:
+            if self._is_cancelled():
+                log.info("Processing cancelled by user")
+                return
+
+            progress.report_page_start(page_num)
+
+            # Process single page with marker-pdf
+            result = self.engine.process_pdf_by_page(pdf_path, page_num)
+            results[page_num] = result
+            checkpoint.save_page(result)
+
+            # Extract embedded images if requested
+            if self.config.extract_images and not result.error:
+                self._extract_page_images(pdf_path, page_num, str(output_subdir))
+
+            if result.error:
+                progress.report_error(page_num, result.error)
+            else:
+                progress.report_page_done(page_num, result.processing_time)
+
+            # Free memory between pages
+            gc.collect()
 
         # Check cancellation
         if self._is_cancelled():
@@ -125,100 +139,12 @@ class Orchestrator:
         checkpoint.cleanup()
         log.info(f"Completed: {pdf_name}")
 
-    def _process_pages_with_prefetch(
-        self,
-        pdf_path: str,
-        pages_to_process: list[int],
-        total_pages: int,
-        results: dict[int, PageResult],
-        checkpoint: CheckpointManager,
-        progress: ProgressReporter,
-        output_dir: str,
-    ) -> None:
-        """Process pages with background prefetching of next pages."""
-        prefetch_count = min(self.config.num_workers, len(pages_to_process))
-
-        with ThreadPoolExecutor(max_workers=prefetch_count) as pool:
-            # Submit initial prefetch batch
-            futures: dict[int, Future] = {}
-            for page_num in pages_to_process[:prefetch_count]:
-                futures[page_num] = pool.submit(
-                    self.pdf_handler.extract_page_image, pdf_path, page_num
-                )
-
-            submitted_idx = prefetch_count
-
-            for page_num in pages_to_process:
-                if self._is_cancelled():
-                    break
-
-                progress.report_page_start(page_num)
-
-                # Get prefetched image (or extract now if not prefetched)
-                if page_num in futures:
-                    try:
-                        image = futures.pop(page_num).result(timeout=120)
-                    except Exception as e:
-                        log.error(f"Failed to extract page {page_num}: {e}")
-                        result = PageResult(page_num, "", 0, error=str(e))
-                        results[page_num] = result
-                        checkpoint.save_page(result)
-                        progress.report_error(page_num, str(e))
-                        continue
-                else:
-                    try:
-                        image = self.pdf_handler.extract_page_image(pdf_path, page_num)
-                    except Exception as e:
-                        log.error(f"Failed to extract page {page_num}: {e}")
-                        result = PageResult(page_num, "", 0, error=str(e))
-                        results[page_num] = result
-                        checkpoint.save_page(result)
-                        progress.report_error(page_num, str(e))
-                        continue
-
-                # Submit next prefetch
-                if submitted_idx < len(pages_to_process):
-                    next_page = pages_to_process[submitted_idx]
-                    futures[next_page] = pool.submit(
-                        self.pdf_handler.extract_page_image, pdf_path, next_page
-                    )
-                    submitted_idx += 1
-
-                # Run OCR
-                result = self.engine.process_page(image, page_num)
-                results[page_num] = result
-                checkpoint.save_page(result)
-
-                # Extract images if requested
-                if self.config.extract_images and result.raw_text:
-                    self._extract_page_images(
-                        pdf_path, page_num, image, result.raw_text, output_dir
-                    )
-
-                if result.error:
-                    progress.report_error(page_num, result.error)
-                else:
-                    progress.report_page_done(page_num, result.processing_time)
-
-                # Free page image memory between pages
-                del image
-                import gc
-                gc.collect()
-
-    def _extract_page_images(
-        self, pdf_path: str, page_num: int, page_image, raw_text: str, output_dir: str
-    ) -> None:
-        """Extract both embedded images and model-detected regions."""
+    def _extract_page_images(self, pdf_path: str, page_num: int, output_dir: str) -> None:
+        """Extract embedded images from a PDF page."""
         try:
-            # Embedded images from PDF
-            self.image_extractor.extract_embedded_images(pdf_path, page_num, output_dir)
-
-            # Model-detected image regions
-            regions = extract_grounding_regions(raw_text)
-            if regions:
-                self.image_extractor.extract_grounding_regions(
-                    page_image, regions, page_num, output_dir
-                )
+            from ..engine.image_extractor import ImageExtractor
+            extractor = ImageExtractor()
+            extractor.extract_embedded_images(pdf_path, page_num, output_dir)
         except Exception as e:
             log.warning(f"Image extraction failed for page {page_num}: {e}")
 

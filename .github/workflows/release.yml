@@ -41,24 +41,10 @@ jobs:
         run: |
           pyinstaller --name deepseek-ocr \
             --onefile \
-            --add-data "models/config.json:models/" \
-            --add-data "models/processor_config.json:models/" \
-            --add-data "models/tokenizer.json:models/" \
-            --add-data "models/tokenizer_config.json:models/" \
-            --add-data "models/special_tokens_map.json:models/" \
-            --add-data "models/model.safetensors.index.json:models/" \
-            --add-data "models/modeling_deepseekocr.py:models/" \
-            --add-data "models/modeling_deepseekv2.py:models/" \
-            --add-data "models/deepencoder.py:models/" \
-            --add-data "models/conversation.py:models/" \
-            --add-data "models/configuration_deepseek_v2.py:models/" \
             --hidden-import customtkinter \
             --hidden-import torch \
-            --hidden-import transformers \
-            --hidden-import safetensors \
-            --hidden-import einops \
-            --hidden-import easydict \
-            --hidden-import addict \
+            --hidden-import surya \
+            --hidden-import marker \
             --collect-all customtkinter \
             src/deepseek_ocr/__main__.py
         shell: bash
