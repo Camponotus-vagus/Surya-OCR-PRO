@@ -11,15 +11,14 @@ from . import __version__
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="deepseek-ocr",
-        description="DeepSeek OCR PRO - High-precision document OCR powered by DeepSeek vision-language model",
+        description="DeepSeek OCR PRO - High-precision document OCR powered by Surya/marker-pdf",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
   deepseek-ocr book.pdf
   deepseek-ocr book.pdf -f txt -f markdown --extract-images --resume
-  deepseek-ocr /path/to/pdfs/ -o ./output --quantize int8
+  deepseek-ocr /path/to/pdfs/ -o ./output
   deepseek-ocr --gui
-  deepseek-ocr --setup
         """,
     )
 
@@ -37,36 +36,24 @@ Examples:
         help="Output format (can be specified multiple times, default: txt)",
     )
     parser.add_argument(
-        "-m", "--mode", default="accurate", choices=["accurate", "fast"],
-        help="OCR mode: accurate (1024px, crop) or fast (640px, default: accurate)",
+        "--languages", default="it,la",
+        help="Comma-separated OCR languages (default: it,la for Italian+Latin)",
     )
     parser.add_argument(
-        "--model-path", default="./models",
-        help="Path to model directory (default: ./models)",
-    )
-    parser.add_argument(
-        "--quantize", default="int8", choices=["none", "int8"],
-        help="Quantization: none or int8 (default: int8)",
-    )
-    parser.add_argument(
-        "--device", default="auto", choices=["auto", "cpu", "cuda", "mps"],
-        help="Device: auto, cpu, cuda, mps (default: auto)",
+        "--no-force-ocr", action="store_true",
+        help="Don't force OCR on all pages (faster for digital PDFs)",
     )
     parser.add_argument(
         "--extract-images", action="store_true",
-        help="Extract embedded images and model-detected regions",
+        help="Extract embedded images from PDF pages",
     )
     parser.add_argument(
         "--resume", action="store_true",
         help="Enable checkpoint/resume for interrupted jobs",
     )
     parser.add_argument(
-        "--workers", type=int, default=2,
-        help="Number of prefetch workers (default: 2)",
-    )
-    parser.add_argument(
-        "--prompt", default="layout", choices=["layout", "freeocr"],
-        help="Prompt mode: layout (markdown output) or freeocr (plain text, default: layout)",
+        "--workers", type=int, default=1,
+        help="Number of prefetch workers (default: 1)",
     )
     parser.add_argument(
         "--config", metavar="FILE",
@@ -74,11 +61,7 @@ Examples:
     )
     parser.add_argument(
         "--gui", action="store_true",
-        help="Launch GUI mode",
-    )
-    parser.add_argument(
-        "--setup", action="store_true",
-        help="Download model from HuggingFace",
+        help="Launch GUI mode (default when no arguments are given)",
     )
     parser.add_argument(
         "--verbose", action="store_true",
@@ -96,22 +79,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    # GUI mode
-    if args.gui:
+    # GUI mode — also launch GUI when no arguments are provided at all
+    # (e.g. user double-clicks the .exe)
+    if args.gui or not args.inputs:
         return _launch_gui()
-
-    # Setup/download mode
-    if args.setup:
-        return _run_setup(args)
-
-    # Validate inputs
-    if not args.inputs:
-        parser.error("No input files specified. Use --gui for GUI mode or --help for usage.")
 
     # Build config
     from .config import OCRConfig
     from .utils.logging_setup import setup_logging
-    from .utils.paths import resolve_model_path
 
     setup_logging(verbose=args.verbose)
 
@@ -121,8 +96,6 @@ def main(argv: list[str] | None = None) -> int:
         if args.inputs:
             config.pdf_paths = _expand_inputs(args.inputs)
     else:
-        # Resolve model path
-        args.model_path = str(resolve_model_path(args.model_path))
         config = OCRConfig.from_args(args)
 
     # Validate
@@ -147,7 +120,7 @@ def _run_ocr(config) -> int:
     engine = OCREngine(config)
 
     try:
-        log.info("Loading model...")
+        log.info("Loading OCR models...")
         engine.load_model()
 
         orchestrator = Orchestrator(config, engine)
@@ -176,31 +149,6 @@ def _launch_gui() -> int:
         return 0
     except ImportError:
         print("GUI requires customtkinter. Install with: pip install customtkinter", file=sys.stderr)
-        return 1
-
-
-def _run_setup(args) -> int:
-    """Download the model from HuggingFace."""
-    from .utils.logging_setup import setup_logging
-    setup_logging(verbose=args.verbose)
-
-    try:
-        from huggingface_hub import snapshot_download
-        import logging
-
-        log = logging.getLogger(__name__)
-        model_path = args.model_path
-
-        log.info(f"Downloading DeepSeek-OCR model to {model_path}")
-        snapshot_download(
-            repo_id="deepseek-ai/DeepSeek-OCR",
-            local_dir=model_path,
-        )
-        log.info("Model download complete")
-        return 0
-
-    except Exception as e:
-        print(f"Setup failed: {e}", file=sys.stderr)
         return 1
 
 

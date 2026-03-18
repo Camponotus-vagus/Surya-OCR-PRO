@@ -11,6 +11,7 @@ dist/
 # Virtual environments
 venv/
 .venv/
+.venv312/
 env/
 
 # Model weights (too large for git)

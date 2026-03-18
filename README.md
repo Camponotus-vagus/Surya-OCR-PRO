@@ -1,14 +1,15 @@
-# DeepSeek OCR PRO V2
+# DeepSeek OCR PRO V3
 
-High-precision document OCR powered by the DeepSeek vision-language model. Extracts text and images from scanned PDFs with state-of-the-art accuracy.
+High-precision document OCR powered by [Surya](https://github.com/datalab-to/surya) and [marker-pdf](https://github.com/datalab-to/marker). Extracts text and images from scanned PDFs with state-of-the-art accuracy, full layout analysis, and 90+ language support.
 
 ## Features
 
 - **CLI-first** with optional GUI - scriptable, automatable, testable
 - **Multiple output formats**: TXT, TXT per page, DOCX, Markdown
-- **Image extraction**: embedded images from PDF + model-detected regions
+- **Full layout analysis**: tables, headings, reading order preservation
+- **90+ languages** including Italian, Latin, and scientific nomenclature
+- **Image extraction**: embedded images from PDF pages
 - **Checkpoint/resume**: interrupt and resume long OCR jobs
-- **CPU optimized**: INT8 quantization + float32 native + thread tuning
 - **Cross-platform**: Windows, macOS, Linux
 
 ## Quick Start
@@ -26,10 +27,9 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install
 pip install -e ".[gui]"
-
-# Download model (~6.2 GB)
-deepseek-ocr --setup
 ```
+
+OCR models are downloaded automatically on first run (managed by marker-pdf/Surya).
 
 ### Usage
 
@@ -43,8 +43,8 @@ deepseek-ocr document.pdf -f txt -f markdown -f docx --extract-images
 # Resume interrupted job
 deepseek-ocr large_book.pdf --resume
 
-# Fast mode (lower accuracy, faster processing)
-deepseek-ocr document.pdf -m fast
+# Specify languages (default: Italian + Latin)
+deepseek-ocr document.pdf --languages it,la,en
 
 # Process all PDFs in a directory
 deepseek-ocr /path/to/pdfs/ -o ./output
@@ -64,10 +64,8 @@ Arguments:
 Options:
   -o, --output DIR          Output directory (default: ./output)
   -f, --format FMT          Output format: txt, txt_pages, docx, markdown
-  -m, --mode MODE           accurate or fast (default: accurate)
-  --model-path DIR          Path to model directory (default: ./models)
-  --quantize TYPE           none or int8 (default: int8)
-  --device DEVICE           auto, cpu, cuda, mps (default: auto)
+  --languages LANGS         Comma-separated OCR languages (default: it,la)
+  --no-force-ocr            Skip OCR on pages with digital text
   --extract-images          Extract embedded images
   --resume                  Enable checkpoint/resume
   --gui                     Launch GUI mode
@@ -77,16 +75,17 @@ Options:
 ## System Requirements
 
 - **Python**: 3.10+
-- **RAM**: 16 GB minimum, 32 GB recommended
-- **Disk**: ~8 GB (model weights + dependencies)
-- **GPU** (optional): CUDA 11.8+ or Apple Silicon MPS
+- **RAM**: 8 GB minimum, 16 GB recommended
+- **Disk**: ~2 GB (Surya model weights, downloaded automatically)
+- **GPU** (optional): CUDA for faster processing (CPU works but is slower)
 
 ## Performance
 
-On Intel Core i9-9880H (8 cores, 32 GB RAM) with INT8 quantization:
-- Model loading: ~2 minutes
-- Per-page OCR (fast mode): ~1-2 minutes
-- Per-page OCR (accurate mode): ~3-5 minutes
+Processing speed depends on page complexity and hardware:
+- **GPU (CUDA)**: ~2-5 seconds per page
+- **CPU**: ~5-30 minutes per page (varies with text density)
+
+For long documents on CPU, use `--resume` to enable checkpoint/resume.
 
 ## Project Structure
 
@@ -94,7 +93,7 @@ On Intel Core i9-9880H (8 cores, 32 GB RAM) with INT8 quantization:
 src/deepseek_ocr/
   cli.py            # Command-line interface
   config.py         # Configuration management
-  engine/           # Model loading, OCR inference, PDF handling
+  engine/           # OCR engine (marker-pdf/Surya), PDF handling
   pipeline/         # Orchestrator, checkpoint, progress
   output/           # TXT, DOCX, Markdown writers
   gui/              # Optional CustomTkinter GUI
@@ -120,6 +119,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- [DeepSeek-OCR](https://github.com/deepseek-ai/DeepSeek-OCR) - The vision-language model
+- [Surya OCR](https://github.com/datalab-to/surya) - Layout analysis and text recognition
+- [marker-pdf](https://github.com/datalab-to/marker) - PDF-to-Markdown conversion pipeline
 - [PyMuPDF](https://pymupdf.readthedocs.io/) - PDF processing
-- [PyTorch](https://pytorch.org/) - Deep learning framework

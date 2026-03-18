@@ -1,4 +1,4 @@
-"""Test fixtures for DeepSeek OCR PRO V2."""
+"""Test fixtures for DeepSeek OCR PRO V3."""
 
 import pytest
 import sys
@@ -101,7 +101,6 @@ def default_config(tmp_path, sample_pdf):
     from deepseek_ocr.config import OCRConfig
     return OCRConfig(
         pdf_paths=[sample_pdf],
-        model_path="./models",
         output_dir=str(tmp_path / "output"),
         formats=["txt"],
     )

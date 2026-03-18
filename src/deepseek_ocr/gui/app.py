@@ -9,7 +9,6 @@ from tkinter import filedialog, messagebox
 
 from ..config import OCRConfig
 from ..utils.logging_setup import setup_logging
-from ..utils.paths import resolve_model_path
 
 
 def launch_gui():
@@ -35,7 +34,7 @@ class OCRApp:
         import customtkinter as ctk
 
         self.root = root
-        self.root.title("DeepSeek OCR PRO V2")
+        self.root.title("DeepSeek OCR PRO V3 — Surya/marker-pdf")
         self.root.geometry("1100x850")
 
         self._engine = None
@@ -52,7 +51,7 @@ class OCRApp:
         top = ctk.CTkFrame(self.root, fg_color="transparent")
         top.grid(row=0, column=0, pady=10, sticky="ew")
 
-        ctk.CTkLabel(top, text="DeepSeek OCR PRO V2", font=("Arial", 24, "bold")).pack(side="left", padx=20)
+        ctk.CTkLabel(top, text="DeepSeek OCR PRO V3", font=("Arial", 24, "bold")).pack(side="left", padx=20)
 
         self.btn_cancel = ctk.CTkButton(top, text="Cancel", command=self._cancel, fg_color="red", state="disabled")
         self.btn_cancel.pack(side="right", padx=10)
@@ -72,21 +71,23 @@ class OCRApp:
         self.docx_var = ctk.BooleanVar(value=False)
         self.md_var = ctk.BooleanVar(value=True)
         self.img_var = ctk.BooleanVar(value=False)
-        self.fast_var = ctk.BooleanVar(value=False)
         self.resume_var = ctk.BooleanVar(value=True)
-        self.quantize_var = ctk.BooleanVar(value=True)
 
         ctk.CTkCheckBox(opts, text="TXT (Single)", variable=self.txt_var).grid(row=0, column=0, padx=15, pady=8, sticky="w")
         ctk.CTkCheckBox(opts, text="TXT Per Page", variable=self.txt_page_var).grid(row=0, column=1, padx=15, pady=8, sticky="w")
         ctk.CTkCheckBox(opts, text="DOCX", variable=self.docx_var).grid(row=0, column=2, padx=15, pady=8, sticky="w")
         ctk.CTkCheckBox(opts, text="Markdown", variable=self.md_var).grid(row=0, column=3, padx=15, pady=8, sticky="w")
         ctk.CTkCheckBox(opts, text="Extract Images", variable=self.img_var).grid(row=1, column=0, padx=15, pady=8, sticky="w")
-        ctk.CTkCheckBox(opts, text="Fast Mode", variable=self.fast_var).grid(row=1, column=1, padx=15, pady=8, sticky="w")
-        ctk.CTkCheckBox(opts, text="Resume", variable=self.resume_var).grid(row=1, column=2, padx=15, pady=8, sticky="w")
-        ctk.CTkCheckBox(opts, text="INT8 Quantize", variable=self.quantize_var).grid(row=1, column=3, padx=15, pady=8, sticky="w")
+        ctk.CTkCheckBox(opts, text="Resume", variable=self.resume_var).grid(row=1, column=1, padx=15, pady=8, sticky="w")
+
+        # Languages
+        ctk.CTkLabel(opts, text="Languages:").grid(row=1, column=2, padx=(15, 5), pady=8, sticky="e")
+        self.lang_entry = ctk.CTkEntry(opts, width=120, placeholder_text="it,la")
+        self.lang_entry.grid(row=1, column=3, padx=(0, 15), pady=8, sticky="w")
+        self.lang_entry.insert(0, "it,la")
 
         # Progress
-        self.status_label = ctk.CTkLabel(self.root, text="Ready", font=("Arial", 14))
+        self.status_label = ctk.CTkLabel(self.root, text="Ready — Powered by Surya/marker-pdf", font=("Arial", 14))
         self.status_label.grid(row=2, column=0, pady=(10, 0))
 
         self.progress = ctk.CTkProgressBar(self.root, width=800)
@@ -121,13 +122,12 @@ class OCRApp:
         if not formats:
             formats = ["txt"]
 
-        model_path = str(resolve_model_path("./models"))
+        lang_text = self.lang_entry.get().strip() or "it,la"
+        languages = [l.strip() for l in lang_text.split(",")]
 
         return OCRConfig(
             pdf_paths=list(pdf_paths),
-            model_path=model_path,
-            quantize="int8" if self.quantize_var.get() else "none",
-            mode="fast" if self.fast_var.get() else "accurate",
+            languages=languages,
             output_dir="./output",
             formats=formats,
             extract_images=self.img_var.get(),
@@ -159,11 +159,11 @@ class OCRApp:
 
         try:
             if self._engine is None:
-                self._log("Loading model (this may take a few minutes)...")
-                self._set_status("Loading AI model...")
+                self._log("Loading Surya OCR models (this may take a few minutes)...")
+                self._set_status("Loading OCR models...")
                 self._engine = OCREngine(config)
                 self._engine.load_model()
-                self._log("Model loaded successfully")
+                self._log("OCR models loaded successfully")
 
             orchestrator = Orchestrator(
                 config, self._engine,
